@@ -27,9 +27,15 @@ export class InputController {
 
   private getCoordinates(e: MouseEvent | Touch): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
+    
+    // 计算Canvas的缩放比例：实际像素尺寸 / 显示尺寸
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    
+    // 将客户端坐标转换为实际Canvas坐标
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
     };
   }
 
