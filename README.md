@@ -5,9 +5,6 @@
 > [!IMPORTANT]  
 > 请尽量使用 `pnpm` 安装和管理，以避免潜在的设置问题。
 
-> [!CAUTION]
-> 项目存在诸多问题，请勿使用！！！
-
 ## 技术栈
 
 ### 前端
@@ -20,7 +17,8 @@
 
 ### 后端
 - WebSocket 服务器 (用于实时通信)
-- HTTP API 服务器 (用于房间管理和历史记录)
+- HTTP API 服务器 (用于房间管理、用户认证和历史记录)
+- SQL 数据库 (用于用户数据和房间信息存储)
 
 ## 功能特性
 
@@ -31,14 +29,25 @@
 - 👥 多人在线显示
 - 🏠 房间管理
 - 📱 响应式设计
-- ⏱️ 操作回放/撤销支持
+- 🔐 用户认证系统 (登录、注册)
+- 📱 手机登录支持
+- 🎯 自动房间分配
+
+## 测试账号
+
+为了方便测试，以下是两个测试手机号和对应的密码：
+
+| 手机号 | 密码 | 说明 |
+|--------|------|------|
+| 13800138000 | 123456 | 测试账号1 |
+| 13800138001 | 123456 | 测试账号2 |
 
 ## 快速开始
 
 ### 环境要求
 
 - Node.js 16+ (推荐使用 Node.js 18)
-- npm 或 yarn 或 pnpm
+- pnpm
 
 ### 安装依赖
 
@@ -113,7 +122,70 @@ server {
 
 ### 2. 后端部署
 
-#### 2.1 WebSocket 服务器
+#### 2.1 数据库设计
+
+##### 2.1.1 用户表 (`users`)
+
+```sql
+CREATE TABLE `users` (
+  `id` varchar(36) NOT NULL COMMENT '用户ID',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `phone` varchar(20) NOT NULL COMMENT '手机号',
+  `password_hash` varchar(255) NOT NULL COMMENT '密码哈希',
+  `color` varchar(10) NOT NULL COMMENT '用户颜色',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_phone` (`phone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+```
+
+##### 2.1.2 房间表 (`rooms`)
+
+```sql
+CREATE TABLE `rooms` (
+  `id` varchar(36) NOT NULL COMMENT '房间ID',
+  `name` varchar(100) NOT NULL COMMENT '房间名称',
+  `creator_id` varchar(36) NOT NULL COMMENT '创建者ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`creator_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间表';
+```
+
+##### 2.1.3 房间用户表 (`room_users`)
+
+```sql
+CREATE TABLE `room_users` (
+  `room_id` varchar(36) NOT NULL COMMENT '房间ID',
+  `user_id` varchar(36) NOT NULL COMMENT '用户ID',
+  `joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  PRIMARY KEY (`room_id`, `user_id`),
+  FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间用户表';
+```
+
+##### 2.1.4 操作记录表 (`operations`)
+
+```sql
+CREATE TABLE `operations` (
+  `id` varchar(36) NOT NULL COMMENT '操作ID',
+  `room_id` varchar(36) NOT NULL COMMENT '房间ID',
+  `user_id` varchar(36) NOT NULL COMMENT '用户ID',
+  `type` varchar(20) NOT NULL COMMENT '操作类型',
+  `data` json NOT NULL COMMENT '操作数据',
+  `tool` varchar(20) NOT NULL COMMENT '工具类型',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_room_id` (`room_id`),
+  KEY `idx_user_id` (`user_id`),
+  FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作记录表';
+```
+
+#### 2.2 WebSocket 服务器
 
 项目依赖于 WebSocket 服务器进行实时通信。你需要部署一个支持以下功能的 WebSocket 服务器：
 
@@ -133,223 +205,30 @@ server {
   - `user_left` - 通知用户离开
   - `remote_operation` - 转发远程操作
   - `pong` - 心跳响应
+  - `check_room` - 检查房间是否存在
+  - `room_exists` - 房间存在响应
 
-#### 2.2 HTTP API 服务器
+#### 2.3 HTTP API 服务器
 
 项目需要 HTTP API 服务器来处理以下功能：
 
 - 房间创建和管理
-- 用户认证（可选）
+- 用户认证（登录、注册）
 - 历史操作记录
-
-**HTTP API 要求**：
-
-- 支持 RESTful API
-- 提供房间管理接口
-- 提供历史操作查询接口
-
-### 3. 配置说明
-
-#### 3.1 前端配置
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| VITE_WEBSOCKET_URL | WebSocket 服务器地址 | ws://localhost:3000 |
-| VITE_API_BASE_URL | HTTP API 地址 | http://localhost:3000/api |
-
-#### 3.2 后端配置
-
-根据你选择的后端框架和数据库，配置相应的参数：
-
-- 数据库连接信息
-- WebSocket 端口
-- HTTP API 端口
-- 跨域配置
-- 认证配置（可选）
-
-## API 接口文档
-
-### 1. WebSocket 接口
-
-#### 1.1 客户端发送消息
-
-##### 1.1.1 加入房间
-
-```json
-{
-  "type": "join_room",
-  "data": {
-    "roomId": "string",
-    "userId": "string",
-    "username": "string"
-  }
-}
-```
-
-##### 1.1.2 绘图操作
-
-```json
-{
-  "type": "operation",
-  "data": {
-    "id": "string",
-    "type": "StartStroke" | "AppendPoint" | "EndStroke",
-    "userId": "string",
-    "timestamp": 1234567890,
-    "data": {
-      // 操作数据，根据操作类型不同而不同
-    },
-    "tool": "brush" | "eraser"
-  }
-}
-```
-
-##### 1.1.3 心跳检测
-
-```json
-{
-  "type": "ping",
-  "data": {
-    "timestamp": 1234567890
-  }
-}
-```
-
-#### 1.2 服务器发送消息
-
-##### 1.2.1 用户加入通知
-
-```json
-{
-  "type": "user_joined",
-  "data": {
-    "userId": "string",
-    "username": "string",
-    "color": "string"
-  }
-}
-```
-
-##### 1.2.2 用户离开通知
-
-```json
-{
-  "type": "user_left",
-  "data": {
-    "userId": "string"
-  }
-}
-```
-
-##### 1.2.3 远程操作
-
-```json
-{
-  "type": "remote_operation",
-  "data": {
-    // 同客户端发送的 operation 数据结构
-  }
-}
-```
-
-##### 1.2.4 心跳响应
-
-```json
-{
-  "type": "pong",
-  "data": {
-    "timestamp": 1234567890
-  }
-}
-```
-
-### 2. HTTP API 接口
-
-#### 2.1 房间管理
-
-##### 2.1.1 创建房间
-
-- **URL**: `/api/rooms`
-- **Method**: `POST`
-- **Request Body**:
-  ```json
-  {
-    "name": "房间名称"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "code": 200,
-    "message": "success",
-    "data": {
-      "roomId": "string",
-      "name": "string",
-      "createdAt": "string"
-    }
-  }
-  ```
-
-##### 2.1.2 获取房间信息
-
-- **URL**: `/api/rooms/{roomId}`
-- **Method**: `GET`
-- **Response**:
-  ```json
-  {
-    "code": 200,
-    "message": "success",
-    "data": {
-      "roomId": "string",
-      "name": "string",
-      "users": [
-        {
-          "userId": "string",
-          "username": "string",
-          "color": "string"
-        }
-      ]
-    }
-  }
-  ```
-
-#### 2.2 历史操作
-
-##### 2.2.1 获取房间历史操作
-
-- **URL**: `/api/rooms/{roomId}/operations`
-- **Method**: `GET`
-- **Query Parameters**:
-  - `limit`: 每页数量
-  - `offset`: 偏移量
-- **Response**:
-  ```json
-  {
-    "code": 200,
-    "message": "success",
-    "data": {
-      "operations": [
-        // 操作列表
-      ],
-      "total": 100
-    }
-  }
-  ```
 
 ## 项目结构
 
 ```
 src/
 ├── api/             # API 服务层
-│   ├── http.ts      # HTTP 客户端
-│   ├── types.ts     # API 类型定义
 │   └── websocket.ts # WebSocket 客户端
 ├── components/      # Vue 组件
 │   ├── CanvasBoard.vue    # 画板组件
 │   ├── ColorPicker.vue    # 颜色选择器
 │   ├── BrushSetting.vue   # 画笔设置
 │   ├── RoomInfo.vue       # 房间信息
-│   └── Toolbar.vue        # 工具栏
+│   ├── Toolbar.vue        # 工具栏
+│   └── LoginPage.vue      # 登录注册页面
 ├── controllers/     # 控制器层
 │   ├── InputController.ts      # 输入处理
 │   └── OperationController.ts  # 操作处理
@@ -364,9 +243,9 @@ src/
 ├── store/           # Pinia 状态管理
 │   ├── board.ts     # 画板状态
 │   └── user.ts      # 用户状态
-├── utils/           # 工具函数
 ├── App.vue          # 根组件
-├── main.ts          # 入口文件
+├── main.js          # 入口文件
+├── style.css        # 全局样式
 └── vite-env.d.ts    # Vite 环境类型
 ```
 
@@ -378,8 +257,6 @@ src/
 - 使用 TypeScript 进行类型检查
 - 组件命名使用 PascalCase
 - 文件名使用 PascalCase 或 kebab-case
-- 使用 ESLint 和 Prettier 进行代码格式化
-- UI 设计 遵循 VinaDesign 内部版本设计规范
 
 ## 注意事项
 
@@ -396,17 +273,7 @@ src/
 3. **数据同步**：
    - 确保操作顺序的一致性
    - 实现操作的幂等性
-   - 考虑使用 CRDT 算法处理冲突
-
-4. **安全性**：
-   - 对 WebSocket 连接进行认证
-   - 验证客户端发送的操作数据
-   - 限制单个用户的操作频率
 
 ## 许可证
 
 MIT
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！

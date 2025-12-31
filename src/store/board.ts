@@ -42,7 +42,7 @@ export const useBoardStore = defineStore('board', {
   },
   
   actions: {
-    setRoomInfo(roomId: string, boardId: string) {
+    setRoomInfo(roomId: string, boardId: string, userId?: string) {
       this.roomId = roomId;
       this.boardId = boardId;
     },

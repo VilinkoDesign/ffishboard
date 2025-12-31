@@ -21,26 +21,46 @@
         </div>
       </div>
     </div>
+    <div v-if="isLoggedIn" class="logout-section">
+      <div class="logout-button" @click="handleLogout">
+        退出登录
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useBoardStore } from '../store/board';
+import { useUserStore } from '../store/user';
 
 const boardStore = useBoardStore();
+const userStore = useUserStore();
 
 // 房间信息
 const roomId = computed(() => boardStore.roomId || '未加入房间');
 const users = computed(() => boardStore.users);
+const isLoggedIn = computed(() => userStore.isLoggedIn);
 
 // 打开加入房间模态框
 const openJoinRoomModal = () => {
-  // 调用App.vue中暴露的全局函数
+  if (!userStore.isLoggedIn) {
+    // 未登录，显示提示
+    alert('当前未登录');
+    return;
+  }
+  
+  // 已登录，打开加入房间模态框
   const openModal = (window as any)._openRoomModal;
   if (openModal) {
     openModal();
   }
+};
+
+// 退出登录
+const handleLogout = () => {
+  // 调用userStore的logout方法
+  userStore.logout();
 };
 </script>
 
@@ -125,5 +145,26 @@ const openJoinRoomModal = () => {
 .user-name {
   color: #333;
   font-weight: 500;
+}
+
+.logout-section {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.logout-button {
+  font-size: 12px;
+  color: #5279FB;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  text-decoration: underline;
+}
+
+.logout-button:hover {
+  background-color: rgba(82, 121, 251, 0.1);
 }
 </style>

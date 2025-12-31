@@ -36,7 +36,7 @@ class WebSocketService {
 
         this.ws.onopen = () => {
           clearTimeout(connectionTimeout);
-          console.log('WebSocket connected');
+
           this.isConnected = true;
           this.reconnectAttempts = 0;
           this.startHeartbeat();
@@ -49,7 +49,7 @@ class WebSocketService {
 
         this.ws.onclose = () => {
           clearTimeout(connectionTimeout);
-          console.log('WebSocket disconnected');
+
           this.isConnected = false;
           this.stopHeartbeat();
           this.attemptReconnect();
@@ -87,7 +87,7 @@ class WebSocketService {
     }
 
     this.reconnectAttempts++;
-    console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+
 
     setTimeout(() => {
       this.connect().catch(error => {
@@ -111,25 +111,30 @@ class WebSocketService {
   }
 
   private sendPing(): void {
-    this.send({
-      type: WebSocketMessageType.PING,
-      data: { timestamp: Date.now() }
-    });
+    // 只在WebSocket连接时发送ping，避免打印错误日志
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.send({
+        type: WebSocketMessageType.PING,
+        data: { timestamp: Date.now() }
+      });
+    }
   }
 
   public send(message: WebSocketMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
-    } else {
-      console.error('WebSocket not connected, cannot send message');
     }
+    // 不再打印错误日志，因为所有调用方都已检查连接状态
   }
 
   public joinRoom(request: JoinRoomRequest): void {
-    this.send({
-      type: WebSocketMessageType.JOIN_ROOM,
-      data: request
-    });
+    // 只在WebSocket连接时发送，避免打印错误日志
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.send({
+        type: WebSocketMessageType.JOIN_ROOM,
+        data: request
+      });
+    }
   }
 
   public checkRoom(roomId: string): Promise<boolean> {
@@ -153,19 +158,32 @@ class WebSocketService {
       this.on(WebSocketMessageType.ROOM_EXISTS, handleRoomExists);
 
       // 发送检查房间请求
-      this.send({
-        type: WebSocketMessageType.CHECK_ROOM,
-        data: { roomId }
-      });
+      // 只在WebSocket连接时发送，避免打印错误日志
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.send({
+          type: WebSocketMessageType.CHECK_ROOM,
+          data: { roomId }
+        });
+      } else {
+        // WebSocket未连接，使用默认行为
+        clearTimeout(timeout);
+        this.off(WebSocketMessageType.ROOM_EXISTS, handleRoomExists);
+        console.warn('WebSocket not connected, assuming room exists for now');
+        resolve(true);
+      }
     });
   }
 
   public sendOperation(operation: Operation): void {
     try {
-      this.send({
-        type: WebSocketMessageType.OPERATION,
-        data: operation
-      });
+      // 只在WebSocket连接时发送，避免打印错误日志
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.send({
+          type: WebSocketMessageType.OPERATION,
+          data: operation
+        });
+      }
+      // WebSocket未连接时静默处理，不打印错误日志
     } catch (error) {
       console.error('WebSocketService: sendOperation failed:', error);
       // 发送失败时不阻止本地绘制
