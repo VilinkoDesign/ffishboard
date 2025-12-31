@@ -44,9 +44,17 @@ const userStore = useUserStore();
 const boardStore = useBoardStore();
 
 // Modal state
-const showRoomModal = ref(true);
+const showRoomModal = ref(false); // 默认不显示房间加入弹窗
 const roomIdInput = ref('');
 const errorMessage = ref('');
+
+// 暴露showRoomModal给子组件
+const openRoomModal = () => {
+  showRoomModal.value = true;
+};
+
+// 向window对象暴露函数，以便子组件调用
+(window as any)._openRoomModal = openRoomModal;
 
 onMounted(() => {
   // 初始化用户信息（实际项目中应该从登录系统获取）
@@ -104,6 +112,8 @@ onMounted(() => {
     document.removeEventListener('cut', handleCut);
     document.removeEventListener('paste', handlePaste);
     document.removeEventListener('contextmenu', handleContextMenu);
+    // 清理全局函数
+    delete (window as any)._openRoomModal;
   };
   
   // 组件卸载时清理事件监听器

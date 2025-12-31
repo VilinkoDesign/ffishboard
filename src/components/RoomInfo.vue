@@ -1,8 +1,9 @@
 <template>
   <div class="room-info">
-    <div class="room-id">
+    <div class="room-id" @click="openJoinRoomModal">
       <span class="label">房间ID:</span>
       <span class="value">{{ roomId }}</span>
+      <span class="join-hint">点击加入房间</span>
     </div>
     <div class="online-users">
       <span class="label">在线用户:</span>
@@ -32,6 +33,15 @@ const boardStore = useBoardStore();
 // 房间信息
 const roomId = computed(() => boardStore.roomId || '未加入房间');
 const users = computed(() => boardStore.users);
+
+// 打开加入房间模态框
+const openJoinRoomModal = () => {
+  // 调用App.vue中暴露的全局函数
+  const openModal = (window as any)._openRoomModal;
+  if (openModal) {
+    openModal();
+  }
+};
 </script>
 
 <style scoped>
@@ -59,6 +69,17 @@ const users = computed(() => boardStore.users);
   font-size: 14px;
 }
 
+.room-id {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.room-id:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .label {
   font-weight: 600;
   color: #666;
@@ -70,6 +91,12 @@ const users = computed(() => boardStore.users);
   background-color: #f5f5f5;
   padding: 2px 6px;
   border-radius: 3px;
+}
+
+.join-hint {
+  font-size: 12px;
+  color: #2196f3;
+  font-style: italic;
 }
 
 .users-list {
