@@ -45,12 +45,12 @@ export class InputController {
   };
 
   private handleMouseMove = (e: MouseEvent): void => {
-    if (!this.isDrawing) return;
+    if (!this.isDrawing) return; // 只处理正在绘制的情况
     this.continueDrawing(e);
   };
 
   private handleMouseUp = (): void => {
-    if (!this.isDrawing) return;
+    if (!this.isDrawing) return; // 只处理正在绘制的情况
     this.stopDrawing();
   };
 
@@ -78,16 +78,19 @@ export class InputController {
   private startDrawing(e: MouseEvent | Touch): void {
     this.isDrawing = true;
     const { x, y } = this.getCoordinates(e);
+    // 所有工具（包括橡皮擦）都使用operationController处理
     this.currentStrokeId = this.operationController.startStroke(x, y);
   }
 
   private continueDrawing(e: MouseEvent | Touch): void {
     const { x, y } = this.getCoordinates(e);
+    // 所有工具（包括橡皮擦）都使用operationController处理
     this.operationController.appendPoint(x, y, this.currentStrokeId);
   }
 
   private stopDrawing(): void {
     this.isDrawing = false;
+    // 所有工具（包括橡皮擦）都使用operationController处理
     this.operationController.endStroke(this.currentStrokeId);
     this.currentStrokeId = '';
   }

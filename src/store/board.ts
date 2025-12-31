@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { Operation } from '../models/operation';
 import { Stroke } from '../models/stroke';
 
+// 定义store
 export const useBoardStore = defineStore('board', {
   state: () => ({
     // 房间信息
@@ -33,9 +34,10 @@ export const useBoardStore = defineStore('board', {
   getters: {
     allStrokes: (state) => {
       // 确保返回所有笔触，包括活跃的和已完成的
+      // 已完成的笔触先渲染，活跃的笔触后渲染，确保活跃的橡皮擦能擦除已完成的笔触
       const active = Array.from(state.activeStrokes.values());
       const completed = Array.from(state.completedStrokes.values());
-      return [...active, ...completed];
+      return [...completed, ...active];
     }
   },
   
@@ -70,6 +72,7 @@ export const useBoardStore = defineStore('board', {
     applyOperation(operation: Operation) {
       const { type, data, userId, tool } = operation;
       
+      // 处理所有工具的笔触存储，包括橡皮擦
       switch (type) {
         case 'StartStroke': {
           const stroke: Stroke = {

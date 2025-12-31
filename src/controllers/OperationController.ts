@@ -7,6 +7,10 @@ export class OperationController {
   private boardStore = useBoardStore();
   private userStore = useUserStore();
 
+  constructor() {
+    // 初始化
+  }
+
   public startStroke(x: number, y: number): string {
     const strokeId = crypto.randomUUID();
     const operation = new StartStroke(
