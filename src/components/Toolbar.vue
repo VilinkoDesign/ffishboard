@@ -106,7 +106,7 @@ const handleEraserDoubleClick = () => {
   gap: 15px;
   padding: 10px;
   background-color: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   backdrop-filter: blur(10px);
@@ -147,9 +147,9 @@ const handleEraserDoubleClick = () => {
 
 .tool-button.active {
   background-color: #e3f2fd;
-  border-color: #2196f3;
+  border-color: #5279FB;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  box-shadow: 0 4px 12px rgba(82, 121, 251, 0.3);
 }
 
 .toolbar-item {
@@ -189,7 +189,7 @@ const handleEraserDoubleClick = () => {
   top: 50%;
   transform: translateY(-50%);
   background-color: white;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   padding: 15px;
   z-index: 1001;

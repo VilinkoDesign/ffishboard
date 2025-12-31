@@ -55,7 +55,7 @@ const openJoinRoomModal = () => {
   gap: 10px;
   padding: 15px;
   background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   backdrop-filter: blur(5px);
@@ -73,7 +73,7 @@ const openJoinRoomModal = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 5px;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .room-id:hover {
@@ -90,7 +90,7 @@ const openJoinRoomModal = () => {
   color: #333;
   background-color: #f5f5f5;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: 12px;
 }
 
 .join-hint {

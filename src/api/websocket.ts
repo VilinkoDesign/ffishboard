@@ -132,6 +132,34 @@ class WebSocketService {
     });
   }
 
+  public checkRoom(roomId: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      // 设置超时，防止无限等待
+      const timeout = setTimeout(() => {
+        console.warn('Check room timeout, assuming room exists for now');
+        resolve(true); // 超时后默认房间存在，避免影响用户体验
+      }, 2000);
+
+      // 监听ROOM_EXISTS消息
+      const handleRoomExists = (data: any) => {
+        clearTimeout(timeout);
+        // 移除监听器
+        this.off(WebSocketMessageType.ROOM_EXISTS, handleRoomExists);
+        // 返回房间是否存在
+        resolve(data.exists);
+      };
+
+      // 添加监听器
+      this.on(WebSocketMessageType.ROOM_EXISTS, handleRoomExists);
+
+      // 发送检查房间请求
+      this.send({
+        type: WebSocketMessageType.CHECK_ROOM,
+        data: { roomId }
+      });
+    });
+  }
+
   public sendOperation(operation: Operation): void {
     try {
       this.send({

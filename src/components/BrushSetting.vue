@@ -59,7 +59,7 @@ const handleSliderChange = (e: Event) => {
   -webkit-appearance: slider-vertical;
   appearance: slider-vertical;
   background: #ddd;
-  border-radius: 3px;
+  border-radius: 12px;
   outline: none;
   cursor: pointer;
 }

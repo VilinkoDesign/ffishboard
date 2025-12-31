@@ -4,6 +4,7 @@ import { Operation } from '../models/operation';
 export enum WebSocketMessageType {
   // 客户端发送
   JOIN_ROOM = 'join_room',
+  CHECK_ROOM = 'check_room',
   OPERATION = 'operation',
   PING = 'ping',
   
@@ -11,6 +12,7 @@ export enum WebSocketMessageType {
   USER_JOINED = 'user_joined',
   USER_LEFT = 'user_left',
   REMOTE_OPERATION = 'remote_operation',
+  ROOM_EXISTS = 'room_exists',
   PONG = 'pong'
 }
 

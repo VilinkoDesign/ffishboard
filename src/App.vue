@@ -120,15 +120,21 @@ onMounted(() => {
   onUnmounted(cleanup);
 });
 
-// Check if room exists (simulated for now)
+// Check if room exists using WebSocket
 const checkRoomExists = async (roomId: string): Promise<boolean> => {
-  // Simulated check - in real app, this would be a WebSocket or HTTP request
-  // For demo purposes, we'll return true for any room ID
-  return true;
+  // 如果WebSocket未连接，先尝试连接
+  if (!websocketService.getConnectionStatus()) {
+    await websocketService.connect();
+  }
+  
+  // 调用websocketService的checkRoom方法检查房间是否存在
+  // 不捕获错误，让handleJoinRoom函数处理
+  return await websocketService.checkRoom(roomId);
 };
 
 const handleJoinRoom = async () => {
-  let roomId = roomIdInput.value.trim();
+  let inputRoomId = roomIdInput.value.trim();
+  let roomId = inputRoomId;
   let userId = userStore.userId;
   let username = userStore.username;
   
@@ -136,13 +142,13 @@ const handleJoinRoom = async () => {
   errorMessage.value = '';
   
   // Check if input is empty
-  if (!roomId) {
+  if (!inputRoomId) {
     errorMessage.value = '请输入房间号';
     return;
   }
   
-  // Special case: vilinko-test-room
-  const isTestRoom = roomId === 'vilinko-test-room';
+  // Special case: vilinko-test-room (case sensitive)
+  const isTestRoom = inputRoomId === 'vilinko-test-room';
   if (isTestRoom) {
     roomId = '1';
     userId = 'admin-user-123';
@@ -152,7 +158,7 @@ const handleJoinRoom = async () => {
   }
   
   try {
-    // Check if room exists (simulated)
+    // Check if room exists using WebSocket
     const roomExists = await checkRoomExists(roomId);
     
     if (!roomExists) {
@@ -163,31 +169,24 @@ const handleJoinRoom = async () => {
     // Set room info
     boardStore.setRoomInfo(roomId, `board-${roomId}`);
     
-    try {
-      // Connect WebSocket and join room
-      await websocketService.connect();
-      
-      websocketService.joinRoom({
-        roomId,
-        userId,
-        username
-      });
-    } catch (wsError) {
-      // For test room, allow entry even if WebSocket fails
-      if (!isTestRoom) {
-        console.error('WebSocket connection failed:', wsError);
-        errorMessage.value = 'WebSocket连接失败，但已进入房间';
-        // Don't return - continue to enter room
-      } else {
-        console.log('Test room entered without WebSocket connection');
-      }
-    }
+    // Connect WebSocket and join room
+    await websocketService.connect();
     
-    // Hide modal - always hide for test room, even if WebSocket fails
+    websocketService.joinRoom({
+      roomId,
+      userId,
+      username
+    });
+    
+    // Hide modal only if WebSocket connection is successful
     showRoomModal.value = false;
   } catch (error) {
     console.error('Failed to join room:', error);
-    errorMessage.value = '加入房间失败，请稍后重试';
+    // 重置房间信息，确保不进入房间
+    boardStore.setRoomInfo('', '');
+    // 显示错误信息
+    errorMessage.value = '错误：请检查房间是否存在';
+    // 不隐藏模态框，让用户可以重新输入
   }
 };
 </script>
@@ -326,7 +325,7 @@ html, body {
   background-color: white;
   color: black;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 12px;
   transition: all 0.3s ease;
 }
 
@@ -356,7 +355,7 @@ html, body {
   padding: 12px 24px;
   font-size: 16px;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 120px;
